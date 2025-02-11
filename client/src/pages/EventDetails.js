@@ -18,6 +18,7 @@ import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { events } from "../services/api";
+import { formatDistanceToNow, isPast, isWithinInterval } from "date-fns";
 
 function EventDetails() {
   const [event, setEvent] = useState(null);
@@ -124,6 +125,16 @@ function EventDetails() {
   const isCreator = user?.id === event.creator._id;
   const isAttendee = event.attendees.some((a) => a._id === user?.id);
 
+  const isEventLive =
+    event &&
+    isWithinInterval(new Date(), {
+      start: new Date(event.startDate),
+      end: new Date(event.endDate),
+    });
+
+  const isEventEnded = event && isPast(new Date(event.endDate));
+  const isEventNotStarted = event && new Date() < new Date(event.startDate);
+
   return (
     <Container maxWidth="md">
       <Box sx={{ mt: 4 }}>
@@ -195,8 +206,15 @@ function EventDetails() {
                   variant="contained"
                   color={isAttendee ? "secondary" : "primary"}
                   onClick={isAttendee ? handleUnjoinEvent : handleJoinEvent}
+                  disabled={isEventEnded || isEventNotStarted}
                 >
-                  {isAttendee ? "Unjoin Event" : "Join Event"}
+                  {isAttendee
+                    ? "Unjoin Event"
+                    : isEventNotStarted
+                    ? "Event not started"
+                    : isEventEnded
+                    ? "Event ended"
+                    : "Join Event"}
                 </Button>
                 <Button variant="outlined" onClick={handleDisconnect}>
                   Disconnect
@@ -213,6 +231,28 @@ function EventDetails() {
                 Login to Join Event
               </Button>
             )}
+          </Box>
+
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" color="textSecondary">
+              {isEventEnded ? (
+                <>
+                  🏁 Ended{" "}
+                  {formatDistanceToNow(new Date(event.endDate), {
+                    addSuffix: true,
+                  })}
+                </>
+              ) : isEventLive ? (
+                <>🔴 Event is live</>
+              ) : (
+                <>
+                  🕒 Starts{" "}
+                  {formatDistanceToNow(new Date(event.startDate), {
+                    addSuffix: true,
+                  })}
+                </>
+              )}
+            </Typography>
           </Box>
         </Paper>
       </Box>
