@@ -10,6 +10,7 @@ import {
   Grid,
   Snackbar,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import { formatDistanceToNow, isPast, isWithinInterval } from "date-fns";
 import React, { useEffect, useState } from "react";
@@ -22,6 +23,7 @@ const categories = ["All", "Conference", "Workshop", "Meetup", "Other"];
 
 function EventDashboard() {
   const [eventsList, setEventsList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -111,10 +113,13 @@ function EventDashboard() {
 
   const fetchEvents = async () => {
     try {
+      setLoading(true);
       const response = await events.getAll();
       setEventsList(response.data);
     } catch (error) {
       console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -288,7 +293,11 @@ function EventDashboard() {
         Events Dashboard
       </Typography>
 
-      {eventsList.length === 0 ? (
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : eventsList.length === 0 ? (
         <Typography variant="body1" color="textSecondary" sx={{ mt: 4 }}>
           No events found
         </Typography>
